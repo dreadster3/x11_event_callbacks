@@ -1,45 +1,48 @@
-#include <X11/X.h>
-#include <X11/Xlib.h>
+#include <cstring>
+#include <exception>
 #include <iostream>
 #include <string>
 
-int main() {
-    Display *display = XOpenDisplay(NULL);
-    if (display == NULL) {
-        std::cerr << "Error: cannot open display" << std::endl;
+#include "EventBus.hpp"
+#include "ResizeEvent.hpp"
+
+void print_usage(char *argv[], std::ostream &out = std::cout) {
+    out << "Usage: " << argv[0] << " <command>" << std::endl;
+    out << "\t<command>  command to execute when screen size changes"
+        << std::endl;
+}
+
+int main(int argc, char *argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+            print_usage(argv);
+            return 0;
+        }
+    }
+
+    if (argc != 2) {
+        print_usage(argv, std::cerr);
         return 1;
     }
 
-    auto screen = DefaultScreen(display);
-    auto root = RootWindow(display, screen);
+    std::string command = argv[1];
 
-    XWindowAttributes attr;
-    XGetWindowAttributes(display, root, &attr);
+    EventBus eventBus = EventBus();
 
-    int currentWidth = attr.width;
-    int currentHeight = attr.height;
+    // Register a listener for the ResizeEvent
+    eventBus.registerListener<ResizeEvent>([command](const ResizeEvent &event) {
+        std::cout << "Screen resized to " << event.getWidth() << "x"
+                  << event.getHeight() << std::endl;
+        std::cout << "Executing command: " << command << std::endl;
+        system(command.c_str());
+    });
 
-    XSelectInput(display, root, StructureNotifyMask);
-
-    while (true) {
-        XEvent event;
-        XNextEvent(display, &event);
-
-        std::string path =
-            "/home/dreadster/Documents/projects/local/x11_event_callbacks";
-
-        std::string script_name = "fix_bar_background.sh";
-
-        std::string script_path = path + "/" + script_name;
-
-        if (event.type == ConfigureNotify) {
-            if (currentWidth != event.xconfigure.width ||
-                currentHeight != event.xconfigure.height) {
-                currentWidth = event.xconfigure.width;
-                currentHeight = event.xconfigure.height;
-
-                system(script_path.c_str());
-            }
-        }
+    // Loops looking for events while triggering the registered listeners
+    try {
+        eventBus.loop();
+    } catch (std::exception &e) {
+        std::cout << e.what() << std::endl;
+        return 1;
     }
+    return 0;
 }
