@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 nitrogen --restore 2> /dev/null
-/home/dreadster/.config/polybar/launch.sh --shades & disown
+$HOME/.config/polybar/shades/launch.sh & disown
