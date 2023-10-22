@@ -12,8 +12,6 @@ file(GLOB HPPFILES src/*.hpp)
 set(SOURCE_FILES ${CPPFILES} ${HPPFILES})
 
 add_executable(x11_event_callbacks ${SOURCE_FILES})
-
-install(TARGETS x11_event_callbacks DESTINATION ${CMAKE_INSTALL_PREFIX})
-
 target_link_libraries(x11_event_callbacks X11)
 
+install(TARGETS x11_event_callbacks DESTINATION ${CMAKE_INSTALL_PREFIX})
